@@ -3,7 +3,7 @@ import type { Express, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import mongoose from 'mongoose';
-
+import authRoutes from './routes/authRoutes.js';
 dotenv.config();
 
 const app: Express = express();
@@ -22,8 +22,9 @@ mongoose.connect(MONGO_URI)
 
 // Test Route
 app.get('/api/test', (req: Request, res: Response) => {
-  res.json({ message: 'Hello from the backend! 👋' });
+  res.json({ message: 'Hello from the backend! ' });
 });
+app.use('/api/auth', authRoutes);
 
 app.listen(port, () => {
   console.log(`🚀 Server is running at http://localhost:${port}`);
