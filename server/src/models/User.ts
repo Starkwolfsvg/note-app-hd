@@ -6,7 +6,10 @@ export interface IUser extends Document {
     email: string;
     dateOfBirth: Date;
     password?: string; // might be google users
-    googleId?: string;  
+    googleId?: string;
+    isVerified: boolean;  
+    otp?: string| null;
+    otpExpires?: Date|null;
     notes: Schema.Types.ObjectId[];
 }
 const userSchema  = new Schema<IUser>({
@@ -23,7 +26,7 @@ const userSchema  = new Schema<IUser>({
     },
     dateOfBirth:{
         type: Date,
-        required: true,
+        required: false,
     },
     password:{
         type:String,
@@ -31,6 +34,18 @@ const userSchema  = new Schema<IUser>({
     },
     googleId:{
         type: String,
+        required: false,
+    },
+    isVerified: {
+        type: Boolean,
+        default: false,
+    },
+    otp: {
+        type: String,
+        required: false,
+    },
+    otpExpires: {
+        type: Date,
         required: false,
     },
     notes: [{

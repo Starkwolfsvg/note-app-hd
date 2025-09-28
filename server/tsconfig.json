@@ -1,24 +1,15 @@
 {
   "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist",
-    "target": "ES2020",
-    "module": "NodeNext",             // ✅ must match NodeNext resolution
+    "target": "es2020",
+    "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "strict": true,
+    "outDir": "./dist",       // <-- Tells TSC where to put compiled files
+    "rootDir": "./src",       // <-- Specifies the root of your source files
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "sourceMap": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "types": ["node"],
-    "declaration": true,
-    "declarationMap": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
+    "strict": true,
+    "skipLibCheck": true
+    // Make sure "noEmit": true is NOT in here
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*"] // <-- Tells TSC which files to compile
 }
