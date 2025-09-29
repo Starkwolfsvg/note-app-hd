@@ -2,7 +2,7 @@ import { Schema, model } from 'mongoose';
 const userSchema = new Schema({
     name: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
     },
     email: {
@@ -14,10 +14,6 @@ const userSchema = new Schema({
     dateOfBirth: {
         type: Date,
         required: false,
-    },
-    password: {
-        type: String,
-        required: false, // google users
     },
     googleId: {
         type: String,

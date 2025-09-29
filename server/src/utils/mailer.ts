@@ -1,28 +1,37 @@
-// server/src/utils/mailer.ts
 import nodemailer from 'nodemailer';
 
-export const sendOTPEmail = async (email: string, otp: string) => {
+export const sendEmail = async (email: string, otp: string) => {
   try {
+    // Gmail SMTP transporter
     const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: Number(process.env.EMAIL_PORT),
+      service: 'gmail', // built-in for Gmail
       auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
+        user: process.env.EMAIL_USER, // your Gmail address
+        pass: process.env.EMAIL_PASS, // 16-char app password
       },
     });
 
+    // Mail options (same as before)
     const mailOptions = {
-      from: 'Your Notes App <no-reply@notesapp.com>',
+      from: `"Notes App" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Your OTP for Email Verification',
-      html: `<p>Your One-Time Password is: <strong>${otp}</strong></p><p>It will expire in 10 minutes.</p>`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height:1.5;">
+          <h2>Email Verification</h2>
+          <p>Your One-Time Password (OTP) is:</p>
+          <h1 style="color:#4CAF50;">${otp}</h1>
+          <p>This OTP will expire in <b>10 minutes</b>. Please do not share it with anyone.</p>
+        </div>
+      `,
     };
 
-    await transporter.sendMail(mailOptions);
-    console.log('OTP email sent successfully');
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ OTP email sent:', info.messageId);
+
+    return info;
   } catch (error) {
-    console.error('Error sending OTP email:', error);
+    console.error('❌ Error sending OTP email:', error);
     throw new Error('Could not send OTP email.');
   }
 };

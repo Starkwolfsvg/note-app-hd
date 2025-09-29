@@ -1,29 +1,21 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from "mongoose";
 
-// Interface for the Note document
 export interface INote extends Document {
+  _id: Types.ObjectId;       // explicitly declare _id
   title: string;
   content: string;
-  user: Schema.Types.ObjectId; // Reference to the user who created it
+  completed: boolean;
+  user: Types.ObjectId;
 }
 
-const noteSchema = new Schema<INote>({
-  title: {
-    type: String,
-    required: true,
-    trim: true,
+const noteSchema = new Schema<INote>(
+  {
+    title: { type: String, required: true },
+    content: { type: String, required: true },
+    completed: { type: Boolean, default: false },
+    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
-  content: {
-    type: String,
-    required: true,
-  },
-  user: {
-    type: Schema.Types.ObjectId,
-    ref: 'User', 
-    required: true,
-  },
-}, {
-  timestamps: true
-});
+  { timestamps: true }
+);
 
-export default model<INote>('Note', noteSchema);
+export default model<INote>("Note", noteSchema);

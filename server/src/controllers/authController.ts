@@ -1,81 +1,95 @@
-// server/src/controllers/authController.ts
-import type { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { Request, Response } from 'express';
 import crypto from 'crypto';
 import User from '../models/User.js';
-import { sendOTPEmail } from '../utils/mailer.js';
+import { sendEmail } from '../utils/mailer.js';
 
-export const generateOtp = async (req: Request, res: Response) => {
+// Send OTP
+export const sendOtp = async (req: Request, res: Response) => {
   try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ message: 'Email is required.' });
-    }
+    const { email, page } = req.body;
+    if (!email || !page) return res.status(400).json({ message: 'Email and page required' });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+    const otpToken = crypto.randomBytes(16).toString('hex');
 
     let user = await User.findOne({ email });
-    if (!user) {
-      // For now, we'll create a user with a placeholder name.
-      // The frontend should ideally send the name and DOB on first-time signup.
-      user = new User({ email, name: 'New User', isVerified: false });
-    }
-
-    const otp = crypto.randomInt(100000, 999999).toString();
-    const salt = await bcrypt.genSalt(10);
-    const hashedOtp = await bcrypt.hash(otp, salt);
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    user.otp = hashedOtp;
-    user.otpExpires = otpExpires;
+    if (!user) user = new User({ email, isVerified: false });
+    
+    user.otp = otp;
+    user.otpExpires = new Date(Date.now() + 5 * 60 * 1000); // 5 min
     await user.save();
 
-    await sendOTPEmail(email, otp);
-    res.status(200).json({ message: 'OTP sent to your email. Please verify.' });
+    await sendEmail(email,otp);
 
+    return res.json({ message: 'OTP sent to email.', otpToken });
   } catch (error) {
-    console.error('Generate OTP Error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error(error);
+    return res.status(500).json({ message: 'Internal server error' });
   }
 };
 
-export const verifyOtp = async (req: Request, res: Response) => {
+// Signup
+export const signup = async (req: Request, res: Response) => {
   try {
-    const { email, otp } = req.body;
-    if (!email || !otp) {
-      return res.status(400).json({ message: 'Email and OTP are required.' });
-    }
+    const { name, dob, email, otp } = req.body;
+    if (!name || !dob || !email || !otp)
+      return res.status(400).json({ message: 'All fields are required' });
 
     const user = await User.findOne({ email });
-    if (!user || !user.otp || !user.otpExpires) {
-      return res.status(400).json({ message: 'Invalid request. Please try again.' });
-    }
+    if (!user) return res.status(400).json({ message: 'OTP not generated for this email' });
 
-    if (user.otpExpires < new Date()) {
-      return res.status(400).json({ message: 'OTP has expired. Please request a new one.' });
-    }
+    if (!user.otp || !user.otpExpires)
+      return res.status(400).json({ message: 'OTP missing. Please request again.' });
 
-    const isMatch = await bcrypt.compare(otp, user.otp);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid OTP.' });
-    }
+    if (user.otp !== otp) return res.status(400).json({ message: 'Incorrect OTP' });
+    if (user.otpExpires < new Date()) return res.status(400).json({ message: 'OTP expired' });
 
+    user.name = name;
+    user.dateOfBirth = new Date(dob);
     user.isVerified = true;
     user.otp = null;
     user.otpExpires = null;
     await user.save();
 
-    const payload = { user: { id: user.id } };
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET as string,
-      { expiresIn: '3h' },
-      (err, token) => {
-        if (err) throw err;
-        res.status(200).json({ message: 'Login successful.', token });
-      }
-    );
+    return res.json({ message: 'Signup successful!' });
   } catch (error) {
-    console.error('OTP Verification Error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error(error);
+    return res.status(500).json({ message: 'Error during signup' });
+  }
+};
+import jwt from "jsonwebtoken";
+const JWT_SECRET = process.env.JWT_SECRET || "supersecretkey";
+
+export const login = async (req: Request, res: Response) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ message: "Email and OTP are required" });
+
+    const user = await User.findOne({ email });
+    if (!user || !user.isVerified) return res.status(401).json({ message: "User not found or not verified" });
+
+    if (user.otp !== otp) return res.status(401).json({ message: "Incorrect OTP" });
+    if (!user.otpExpires || user.otpExpires < new Date()) return res.status(401).json({ message: "OTP expired" });
+
+    // clear OTP after login
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+
+    // generate auth token
+    const authToken = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
+
+    return res.status(200).json({
+      authToken,
+      userData: {
+        name: user.name,
+        email: user.email,
+        dateOfBirth: user.dateOfBirth,
+        notes: user.notes,
+      },
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };

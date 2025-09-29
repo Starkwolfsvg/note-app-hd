@@ -2,10 +2,9 @@ import { Schema, model, Document} from 'mongoose';
 
 // Interface to define the User document structure for TypeScript
 export interface IUser extends Document {
-    name: string;
+    name?: string;
     email: string;
     dateOfBirth: Date;
-    password?: string; // might be google users
     googleId?: string;
     isVerified: boolean;  
     otp?: string| null;
@@ -15,7 +14,7 @@ export interface IUser extends Document {
 const userSchema  = new Schema<IUser>({
     name:{
         type: String,
-        required: true,
+        required: false,
         trim: true,
     },
     email:{
@@ -27,10 +26,6 @@ const userSchema  = new Schema<IUser>({
     dateOfBirth:{
         type: Date,
         required: false,
-    },
-    password:{
-        type:String,
-        required: false,// google users
     },
     googleId:{
         type: String,

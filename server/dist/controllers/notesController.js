@@ -1,67 +1,45 @@
-import Note from '../models/Notes.js';
-import User from '../models/User.js';
-// @desc    Create a new note
-// @route   POST /api/notes
-// @access  Private
+import Note from "../models/Notes.js";
+// Create note
 export const createNote = async (req, res) => {
-    try {
-        const { title, content } = req.body;
-        // ✅ THE FIX: Cast `req` to `AuthRequest` here
-        const userId = req.user?.id;
-        if (!title || !content) {
-            return res.status(400).json({ message: 'Title and content are mandatory.' });
-        }
-        const newNote = new Note({
-            title,
-            content,
-            user: userId,
-        });
-        const savedNote = await newNote.save();
-        await User.findByIdAndUpdate(userId, { $push: { notes: savedNote._id } });
-        res.status(201).json(savedNote);
-    }
-    catch (error) {
-        console.error('Error creating note:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+    if (!req.user)
+        return res.status(401).json({ message: "Unauthorized" });
+    const { notedata, completed } = req.body;
+    const note = await Note.create({
+        title: notedata,
+        content: notedata,
+        completed: completed || false,
+        user: req.user.id,
+    });
+    return res.status(201).json({
+        id: note._id.toString(), // ✅ now TS knows _id exists
+        notedata: note.content,
+        completed: note.completed,
+    });
 };
-// @desc    Get all notes for a logged-in user
-// @route   GET /api/notes
-// @access  Private
-export const getNotes = async (req, res) => {
-    try {
-        // ✅ THE FIX: Cast `req` to `AuthRequest` here
-        const userId = req.user?.id;
-        const notes = await Note.find({ user: userId }).sort({ createdAt: -1 });
-        res.status(200).json(notes);
-    }
-    catch (error) {
-        console.error('Error fetching notes:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+// View notes
+export const viewNotes = async (req, res) => {
+    if (!req.user)
+        return res.status(401).json({ message: "Unauthorized" });
+    const notes = await Note.find({ user: req.user.id });
+    // convert ObjectId to string for frontend
+    const formattedNotes = notes.map((note) => ({
+        id: note._id.toString(),
+        notedata: note.content,
+        completed: note.completed,
+    }));
+    return res.json({ data: formattedNotes });
 };
-// @desc    Delete a note
-// @route   DELETE /api/notes/:id
-// @access  Private
+// Delete note
 export const deleteNote = async (req, res) => {
-    try {
-        // ✅ THE FIX: Cast `req` to `AuthRequest` here
-        const userId = req.user?.id;
-        const noteId = req.params.id;
-        const note = await Note.findById(noteId);
-        if (!note) {
-            return res.status(404).json({ message: 'Note not found.' });
-        }
-        // Make sure the note belongs to the user trying to delete it
-        if (note.user.toString() !== userId) {
-            return res.status(401).json({ message: 'Not authorized to delete this note.' });
-        }
-        await Note.findByIdAndDelete(noteId);
-        await User.findByIdAndUpdate(userId, { $pull: { notes: noteId } });
-        res.status(200).json({ message: 'Note deleted successfully.' });
+    if (!req.user)
+        return res.status(401).json({ message: "Unauthorized" });
+    const note = await Note.findById(req.params.id);
+    if (!note)
+        return res.status(404).json({ message: "Note not found" });
+    // ensure note belongs to user
+    if (note.user.toString() !== req.user.id) {
+        return res.status(403).json({ message: "Forbidden" });
     }
-    catch (error) {
-        console.error('Error deleting note:', error);
-        res.status(500).json({ message: 'Server error' });
-    }
+    await note.deleteOne();
+    return res.json({ message: "Note deleted successfully", id: note._id.toString() });
 };

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5001/api';
 
 
 export const sendOtp = async (email: string, page: 'signup' | 'login') => {
@@ -19,7 +19,7 @@ export const login = async (email: string, otp: string, otpToken: string) => {
 };
 
 export const createNote = async (accessToken: string | null, noteData: string, completed: boolean) => {
-    const response = await axios.post(`${API_BASE_URL}/notes/create`, { notedata: noteData, completed }, {
+    const response = await axios.post(`${API_BASE_URL}/notes/create`, { title : "title",notedata: noteData, completed }, {
         headers: {
             ContentType: 'application/json',
             Authorization: `Bearer ${accessToken}`,

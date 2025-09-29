@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "type": "module",
-"scripts": {
+  "scripts": {
     "build": "tsc",
     "start": "node -r dotenv/config dist/index.js",
     "dev": "nodemon"
@@ -12,7 +12,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",

@@ -1,44 +1,25 @@
-import type { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+// middlewares/authMiddleware.ts
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 
-// // Extend Request to include `user`
 export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-  };
+  user?: { id: string }; // Type-safe user info
 }
 
-// Define JWT payload type
-interface JwtPayload {
-  user: {
-    id: string;
-  };
-}
+export const protect = (req: AuthRequest, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
 
-export const protect = (req: Request, res: Response, next: NextFunction): void => {
-  let token: string | undefined;
-
-  // Check token in the Authorization header
-  const authHeader = req.header('Authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    token = authHeader.split(' ')[1];
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Not authorized, no token" });
   }
 
-  // No token
-  if (!token) {
-    res.status(401).json({ message: 'Not authorized, no token' });
-    return; // ✅ exit early
-  }
+  const token = authHeader.split(" ")[1];
 
   try {
-    // Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
-
-    // Attach user info to request
-    req.user = decoded.user;
-
-    next(); // ✅ proceed to next middleware
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    req.user = { id: decoded.userId };
+    next();
   } catch (error) {
-    res.status(401).json({ message: 'Not authorized, token failed' });
+    return res.status(401).json({ message: "Token invalid or expired" });
   }
 };
