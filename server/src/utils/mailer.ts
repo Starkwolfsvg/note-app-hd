@@ -2,18 +2,19 @@ import nodemailer from 'nodemailer';
 
 export const sendEmail = async (email: string, otp: string) => {
   try {
-    // Gmail SMTP transporter
+    // SendGrid SMTP transporter
     const transporter = nodemailer.createTransport({
-      service: 'gmail', // built-in for Gmail
+      host: 'smtp.sendgrid.net',
+      port: 587, // or 465 if you prefer SSL
       auth: {
-        user: process.env.EMAIL_USER, // your Gmail address
-        pass: process.env.EMAIL_PASS, // 16-char app password
+        user: 'apikey', // literally the word 'apikey'
+        pass: process.env.SENDGRID_API_KEY, // your SendGrid API key from Render env
       },
     });
 
-    // Mail options (same as before)
+    // Mail options
     const mailOptions = {
-      from: `"Notes App" <${process.env.EMAIL_USER}>`,
+      from: `"Notes App" <no-reply@notesapp.com>`, // can be any verified sender in SendGrid
       to: email,
       subject: 'Your OTP for Email Verification',
       html: `
