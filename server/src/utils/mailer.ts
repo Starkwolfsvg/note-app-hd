@@ -6,7 +6,7 @@ export const sendEmail = async (email: string, otp: string) => {
   try {
     const msg = {
       to: email,
-      from: 'no-reply@notesapp.com',
+      from: 'dsa.love045@gmail.com',
       subject: 'Your OTP for Email Verification',
       html: `
         <div style="font-family: Arial, sans-serif; line-height:1.5;">
