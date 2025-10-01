@@ -1,12 +1,12 @@
 import sgMail from '@sendgrid/mail';
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!); // ❗ notice the ! at the end
 
 export const sendEmail = async (email: string, otp: string) => {
   try {
     const msg = {
       to: email,
-      from: 'no-reply@notesapp.com', // must be verified in SendGrid
+      from: 'no-reply@notesapp.com',
       subject: 'Your OTP for Email Verification',
       html: `
         <div style="font-family: Arial, sans-serif; line-height:1.5;">
